@@ -38,8 +38,11 @@ export function createPanel({ onGo, onDetourChange, onLocate }) {
     hideResult() {
       $('result').hidden = true;
     },
-    bottomInset() {
-      return window.innerWidth >= 768 ? 0 : $('panel').getBoundingClientRect().height;
+    insets() {
+      const rect = $('panel').getBoundingClientRect();
+      return window.innerWidth >= 768
+        ? { left: rect.right + 16, bottom: 0 }
+        : { left: 0, bottom: rect.height };
     },
   };
 }

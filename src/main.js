@@ -34,7 +34,7 @@ const panel = createPanel({
 });
 const view = createMap(document.getElementById('map'), {
   onPick: pick,
-  getBottomInset: () => panel.bottomInset(),
+  getInsets: () => panel.insets(),
 });
 
 const startPoint = () => state.start ?? state.user;
@@ -130,7 +130,7 @@ async function go() {
       panel.setStatus('');
       panel.showResult(stats, result.alpha === 0);
       view.drawRoute(segmentsByBand(result.chosen, graph.nodes), pathLatLngs(result.shortest, graph.nodes), {
-        bottomPadding: panel.bottomInset(),
+        insets: panel.insets(),
       });
     } catch (err) {
       console.error(err);

@@ -8,7 +8,7 @@ const BAND_STYLE = {
   wide: { color: '#f3c48c', weight: 5 },
 };
 
-export function createMap(el, { onPick, getBottomInset }) {
+export function createMap(el, { onPick, getInsets }) {
   const map = L.map(el, { zoomControl: false, attributionControl: false }).setView(TOKYO, 16);
   // 下のパネルに隠れないよう左上（右上は現在地ボタン）
   L.control.attribution({ position: 'topleft' }).addTo(map);
@@ -16,6 +16,10 @@ export function createMap(el, { onPick, getBottomInset }) {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
+  // コンテナの大きさが window の resize なしに変わっても追従させる
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(() => map.invalidateSize({ animate: false, pan: false })).observe(el);
+  }
   const routeLayer = L.layerGroup().addTo(map);
   let startMarker = null;
   let goalMarker = null;
@@ -38,9 +42,10 @@ export function createMap(el, { onPick, getBottomInset }) {
       });
       box.append(button);
     }
+    const { left, bottom } = getInsets();
     L.popup({
-      autoPanPaddingTopLeft: [16, 72],
-      autoPanPaddingBottomRight: [16, getBottomInset() + 16],
+      autoPanPaddingTopLeft: [16 + left, 72],
+      autoPanPaddingBottomRight: [16, bottom + 16],
     })
       .setLatLng(e.latlng).setContent(box).openOn(map);
   });
@@ -82,7 +87,7 @@ export function createMap(el, { onPick, getBottomInset }) {
     center(point) {
       map.setView([point.lat, point.lon], Math.max(map.getZoom(), 16));
     },
-    drawRoute(segments, shortestLatLngs, { bottomPadding }) {
+    drawRoute(segments, shortestLatLngs, { insets }) {
       routeLayer.clearLayers();
       L.polyline(shortestLatLngs, { color: '#777', weight: 4, dashArray: '6 8', opacity: 0.8 }).addTo(
         routeLayer,
@@ -98,8 +103,8 @@ export function createMap(el, { onPick, getBottomInset }) {
       const all = segments.flatMap((s) => s.latlngs).concat(shortestLatLngs);
       if (all.length > 0) {
         map.fitBounds(L.latLngBounds(all), {
-          paddingTopLeft: [24, 72],
-          paddingBottomRight: [24, bottomPadding + 24],
+          paddingTopLeft: [24 + insets.left, 72],
+          paddingBottomRight: [24, insets.bottom + 24],
         });
       }
     },
