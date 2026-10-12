@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="狭い道・路地を選んで案内する散歩ナビ" />
+    <title>ほそみち</title>
+  </head>
+  <body>
+    <div id="map"></div>
+    <button id="locate" type="button" aria-label="現在地に戻る">◎</button>
+
+    <section id="panel" aria-label="ルートの設定と結果">
+      <button id="panel-toggle" type="button" aria-label="パネルを開閉">
+        <span class="handle"></span>
+      </button>
+      <h1>ほそみち</h1>
+      <p id="hint">地図を長押し（PCは右クリック）して目的地を選んでください</p>
+
+      <dl id="points">
+        <dt>出発</dt>
+        <dd id="start-label">現在地（取得中）</dd>
+        <dt>目的地</dt>
+        <dd id="goal-label">未設定</dd>
+      </dl>
+
+      <fieldset id="detour">
+        <legend>遠回りの上限</legend>
+        <label><input type="radio" name="detour" value="1.2" /> 1.2倍</label>
+        <label><input type="radio" name="detour" value="1.5" checked /> 1.5倍</label>
+        <label><input type="radio" name="detour" value="2" /> 2.0倍</label>
+      </fieldset>
+
+      <button id="go" type="button" disabled>ほそみちで行く</button>
+      <p id="status" role="status"></p>
+
+      <div id="result" hidden>
+        <p class="share">
+          狭い道 <strong id="r-share"></strong>
+          <span class="sub">（最短なら <span id="r-short-share"></span>）</span>
+        </p>
+        <p>遠回り <span id="r-detour"></span> ・ <span id="r-length"></span></p>
+        <p class="evidence">
+          幅の根拠：実測 <span id="r-measured"></span>／種別から推定 <span id="r-estimated"></span>
+        </p>
+        <p id="r-note" class="note" hidden></p>
+        <ul class="legend">
+          <li><span class="swatch narrow"></span>狭い</li>
+          <li><span class="swatch middle"></span>ふつう</li>
+          <li><span class="swatch wide"></span>広い</li>
+          <li><span class="swatch shortest"></span>最短ルート</li>
+        </ul>
+      </div>
+    </section>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
