@@ -1,5 +1,9 @@
 // サーバ側から Overpass を叩く。Vercel 関数（api/overpass.js）と Vite の dev middleware で共有する。
+import net from 'node:net';
 import { buildRoadQuery } from '../src/lib/overpassQuery.js';
+
+// Node の happy eyeballs は1アドレスあたり250msで次へ進む。ドイツの Overpass までは往復でそれを超えるので全滅する（IPv6 不通＋片方のサーバ拒否の環境で実測）。1秒に延ばす
+net.setDefaultAutoSelectFamilyAttemptTimeout(1000);
 
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
