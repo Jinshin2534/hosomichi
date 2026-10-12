@@ -11,15 +11,26 @@ export async function fetchRoadData(bounds, onProgress = () => {}) {
   const results = new Array(tiles.length);
   let next = 0;
   let done = 0;
+  let failed = false;
+  const controller = new AbortController();
 
   async function worker() {
-    while (next < tiles.length) {
+    while (!failed && next < tiles.length) {
       const i = next++;
-      const res = await fetch(`/api/overpass?${tileToParams(tiles[i])}`, {
-        signal: AbortSignal.timeout(60000),
-      });
-      if (!res.ok) throw new Error(`overpass proxy ${res.status}`);
-      results[i] = expandOsm(await res.json());
+      try {
+        const res = await fetch(`/api/overpass?${tileToParams(tiles[i])}`, {
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(60000)]),
+        });
+        if (!res.ok) throw new Error(`overpass proxy ${res.status}`);
+        const data = expandOsm(await res.json());
+        if (failed) return;
+        results[i] = data;
+      } catch (err) {
+        // 最初の失敗で全員を止める（取得中のものは中断、以降は進捗も出さない）
+        failed = true;
+        controller.abort();
+        throw err;
+      }
       onProgress(++done, tiles.length);
     }
   }

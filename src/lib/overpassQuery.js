@@ -17,7 +17,9 @@ export function tileToParams({ tx, ty }) {
 
 export function parseTileParams(params) {
   const raw = { tx: params.get('tx'), ty: params.get('ty') };
-  if (!/^-?\d+$/.test(raw.tx ?? '') || !/^-?\d+$/.test(raw.ty ?? '')) return null;
+  // 正規形（'01' '-0' などを弾く）だけ受ける。別表記で同じタイルを叩かれると CDN キャッシュを汚せる
+  const canonical = (v) => /^-?\d+$/.test(v ?? '') && String(Number(v)) === v;
+  if (!canonical(raw.tx) || !canonical(raw.ty)) return null;
   const tile = { tx: Number(raw.tx), ty: Number(raw.ty) };
   const b = tileBounds(tile);
   if (b.south < -90 || b.north > 90 || b.west < -180 || b.east > 180) return null;

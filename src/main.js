@@ -16,6 +16,7 @@ const state = {
   geoFailed: false,
   maxDetour: 1.5,
   busy: false,
+  runId: 0, // go() の実行ごとに増やす
   inputsVersion: 0, // 入力が変わるたびに増やし、古い入力で走った結果を捨てる
   lastResult: null,
 };
@@ -83,6 +84,8 @@ async function go() {
   }
 
   const version = state.inputsVersion;
+  const runId = ++state.runId;
+  const maxDetour = state.maxDetour;
   state.busy = true;
   refresh();
   panel.hideResult();
@@ -92,6 +95,7 @@ async function go() {
     let osm;
     try {
       osm = await fetchRoadData(fetchBounds(start, goal), (done, total) => {
+        if (runId !== state.runId || version !== state.inputsVersion) return;
         panel.setStatus(`道のデータを集めています…（${done}/${total}）`);
       });
     } catch {
@@ -108,10 +112,14 @@ async function go() {
     }
     panel.setStatus('ほそみちを探しています…');
     await new Promise((resolve) => setTimeout(resolve, 0)); // 文言を描画させてから重い計算に入る
+    if (version !== state.inputsVersion) {
+      panel.setStatus('');
+      return;
+    }
 
     try {
       const graph = buildGraph(osm);
-      const result = planRoute(graph, start, goal, state.maxDetour);
+      const result = planRoute(graph, start, goal, maxDetour);
       if (!result.ok) {
         panel.setStatus(ERROR_MESSAGES[result.error], 'error');
         return;

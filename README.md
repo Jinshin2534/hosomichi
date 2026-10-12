@@ -23,6 +23,6 @@ pnpm test
 pnpm fixture    # 谷中の実データ fixture を取り直す
 ```
 
-Overpass は `*.vercel.app` からのブラウザ直叩きを遮断するため、dev・本番とも同一オリジンの `/api/overpass`（範囲だけを GET で受け取り、サーバでクエリを組み立てる）を通します。
+Overpass は `*.vercel.app` からのブラウザ直叩きを遮断するため、dev・本番とも同一オリジンの `/api/overpass`（ブラウザが取得範囲を固定の 0.03° タイルに分け、タイル番号で `/api/overpass?tx=&ty=` を1枚ずつ（同時2本まで）頼み、サーバがクエリを組み立てる。Vercel の応答 4.5MB 上限を避けることと、CDN キャッシュのキーを正規化することが理由）を通します。
 
 地図データ © OpenStreetMap contributors
