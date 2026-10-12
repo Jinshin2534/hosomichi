@@ -3,7 +3,8 @@ export function formatPercent(x) {
 }
 
 export function formatKm(m) {
-  return m < 1000 ? `${Math.round(m)}m` : `${(m / 1000).toFixed(1)}km`;
+  const r = Math.round(m);
+  return r < 1000 ? `${r}m` : `${(m / 1000).toFixed(1)}km`;
 }
 
 export function formatDetour(x) {

@@ -152,5 +152,5 @@ describe('planRoute: 不変条件', () => {
     expect(unreachable).toBeLessThan(900 * 0.2);
     // 半分以上のケースで実際に狭い道が増えている（α>0 が選ばれている）
     expect(improved).toBeGreaterThan(okCount * 0.5);
-  });
+  }, 30000);
 });

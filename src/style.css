@@ -29,8 +29,13 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   min-height: 480px;
   z-index: 0;
+  /* 長押しで iOS の画像メニューではなく自前のメニューを出す */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #locate {

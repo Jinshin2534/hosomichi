@@ -16,6 +16,7 @@ const state = {
   geoFailed: false,
   maxDetour: 1.5,
   busy: false,
+  inputsVersion: 0, // 入力が変わるたびに増やし、古い入力で走った結果を捨てる
   lastResult: null,
 };
 
@@ -23,13 +24,17 @@ const panel = createPanel({
   onGo: () => go(),
   onDetourChange: (r) => {
     state.maxDetour = r;
+    state.inputsVersion++;
     if (!state.busy) clearResult();
   },
   onLocate: () => {
     if (state.user) view.center(state.user);
   },
 });
-const view = createMap(document.getElementById('map'), { onPick: pick });
+const view = createMap(document.getElementById('map'), {
+  onPick: pick,
+  getBottomInset: () => panel.bottomInset(),
+});
 
 const startPoint = () => state.start ?? state.user;
 
@@ -59,6 +64,7 @@ function clearResult() {
 
 function pick(role, point) {
   state[role] = point;
+  state.inputsVersion++;
   if (!state.busy) clearResult(); // 計算中は走っている実行に触らない
   refresh();
 }
@@ -76,6 +82,7 @@ async function go() {
     return;
   }
 
+  const version = state.inputsVersion;
   state.busy = true;
   refresh();
   panel.hideResult();
@@ -84,9 +91,19 @@ async function go() {
   try {
     let osm;
     try {
-      osm = await fetchRoadData(fetchBounds(start, goal));
+      osm = await fetchRoadData(fetchBounds(start, goal), (done, total) => {
+        panel.setStatus(`道のデータを集めています…（${done}/${total}）`);
+      });
     } catch {
+      if (version !== state.inputsVersion) {
+        panel.setStatus('');
+        return;
+      }
       panel.setStatus(ERROR_MESSAGES['fetch-failed'], 'error');
+      return;
+    }
+    if (version !== state.inputsVersion) {
+      panel.setStatus('');
       return;
     }
     panel.setStatus('ほそみちを探しています…');

@@ -46,7 +46,7 @@ function widthToN(width) {
 
 export function isExcluded(tags) {
   const highway = tags.highway;
-  if (!highway || !(highway in HIGHWAY_N)) return true;
+  if (!highway || !Object.hasOwn(HIGHWAY_N, highway)) return true;
   if (tags.area === 'yes') return true;
   if (tags.foot === 'no') return true;
   if (highway === 'cycleway' && tags.foot !== 'yes' && tags.foot !== 'designated') return true;

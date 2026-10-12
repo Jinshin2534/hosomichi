@@ -8,7 +8,7 @@ const BAND_STYLE = {
   wide: { color: '#f3c48c', weight: 5 },
 };
 
-export function createMap(el, { onPick }) {
+export function createMap(el, { onPick, getBottomInset }) {
   const map = L.map(el, { zoomControl: false, attributionControl: false }).setView(TOKYO, 16);
   // 下のパネルに隠れないよう左上（右上は現在地ボタン）
   L.control.attribution({ position: 'topleft' }).addTo(map);
@@ -38,7 +38,11 @@ export function createMap(el, { onPick }) {
       });
       box.append(button);
     }
-    L.popup().setLatLng(e.latlng).setContent(box).openOn(map);
+    L.popup({
+      autoPanPaddingTopLeft: [16, 72],
+      autoPanPaddingBottomRight: [16, getBottomInset() + 16],
+    })
+      .setLatLng(e.latlng).setContent(box).openOn(map);
   });
 
   function pin(marker, point, cls, label) {

@@ -1,13 +1,6 @@
 import { HIGHWAY_KINDS } from './narrowness.js';
+import { tileBounds } from './tiles.js';
 
-// 5km＋余白でも収まる上限（日本の緯度なら東西 0.1 度 ≈ 8〜9km）
-const MAX_SPAN_DEG = 0.1;
-const KEYS = [
-  ['s', 'south'],
-  ['w', 'west'],
-  ['n', 'north'],
-  ['e', 'east'],
-];
 
 const fix6 = (v) => v.toFixed(6);
 
@@ -17,21 +10,58 @@ export function buildRoadQuery({ south, west, north, east }) {
   return `[out:json][timeout:25];way["highway"~"^(${kinds})$"](${bbox});(._;>;);out body qt;`;
 }
 
-export function boundsToParams(bounds) {
-  return KEYS.map(([short, long]) => `${short}=${fix6(bounds[long])}`).join('&');
+// サーバは 0.03度の固定タイル1枚だけを返す（キャッシュキーが正規化され、広い範囲も頼めない）
+export function tileToParams({ tx, ty }) {
+  return `tx=${tx}&ty=${ty}`;
 }
 
-export function parseBoundsParams(params) {
-  const b = {};
-  for (const [short, long] of KEYS) {
-    const raw = params.get(short);
-    if (raw === null || raw.trim() === '') return null;
-    const v = Number(raw);
-    if (!Number.isFinite(v)) return null;
-    b[long] = v;
-  }
+export function parseTileParams(params) {
+  const raw = { tx: params.get('tx'), ty: params.get('ty') };
+  if (!/^-?\d+$/.test(raw.tx ?? '') || !/^-?\d+$/.test(raw.ty ?? '')) return null;
+  const tile = { tx: Number(raw.tx), ty: Number(raw.ty) };
+  const b = tileBounds(tile);
   if (b.south < -90 || b.north > 90 || b.west < -180 || b.east > 180) return null;
-  if (b.south >= b.north || b.west >= b.east) return null;
-  if (b.north - b.south > MAX_SPAN_DEG || b.east - b.west > MAX_SPAN_DEG) return null;
-  return b;
+  return tile;
+}
+
+// narrowness() が読むタグだけ。ほかは通信量の無駄
+const KEPT_TAGS = ['highway', 'width', 'footway', 'service', 'foot', 'access', 'area'];
+
+export function compactOsm(osm) {
+  const nodes = [];
+  const ways = [];
+  for (const el of osm.elements) {
+    if (el.type === 'node') {
+      nodes.push(el.id, el.lat, el.lon);
+    } else if (el.type === 'way') {
+      const tags = {};
+      for (const k of KEPT_TAGS) if (el.tags && k in el.tags) tags[k] = el.tags[k];
+      ways.push([el.id, el.nodes, tags]);
+    }
+  }
+  return { nodes, ways };
+}
+
+export function expandOsm({ nodes, ways }) {
+  const elements = [];
+  for (let i = 0; i < nodes.length; i += 3) {
+    elements.push({ type: 'node', id: nodes[i], lat: nodes[i + 1], lon: nodes[i + 2] });
+  }
+  for (const [id, wayNodes, tags] of ways) elements.push({ type: 'way', id, nodes: wayNodes, tags });
+  return { elements };
+}
+
+// タイルの境界をまたぐ way は複数タイルに現れる（node の座標は同じ）
+export function mergeOsm(list) {
+  const seen = new Set();
+  const elements = [];
+  for (const osm of list) {
+    for (const el of osm.elements) {
+      const key = `${el.type}/${el.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      elements.push(el);
+    }
+  }
+  return { elements };
 }

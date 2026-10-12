@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { buildGraph } from '../src/lib/graph.js';
 import { planRoute } from '../src/lib/route.js';
 import { pathLength, narrowShare } from '../src/lib/stats.js';
+import { compactOsm } from '../src/lib/overpassQuery.js';
 import { YANAKA } from './fixtures/points.js';
 
 const osm = JSON.parse(readFileSync(new URL('./fixtures/yanaka.json', import.meta.url), 'utf8'));
@@ -30,5 +31,13 @@ describe('実データ: 日暮里駅 → 根津駅', () => {
         `遠回り ${(pathLength(r.chosen.edges) / pathLength(r.shortest.edges)).toFixed(2)}倍、α=${r.alpha}`,
     );
     expect(chosen).toBeGreaterThan(shortest + 0.1);
+  });
+});
+
+describe('実データ: 通信量', () => {
+  it('コンパクト形式は元の 60% 未満', () => {
+    const ratio = JSON.stringify(compactOsm(osm)).length / JSON.stringify(osm).length;
+    console.log(`コンパクト化: ${(ratio * 100).toFixed(0)}%`);
+    expect(ratio).toBeLessThan(0.6);
   });
 });

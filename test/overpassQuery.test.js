@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { buildRoadQuery, boundsToParams, parseBoundsParams } from '../src/lib/overpassQuery.js';
+import {
+  buildRoadQuery,
+  tileToParams,
+  parseTileParams,
+  compactOsm,
+  expandOsm,
+  mergeOsm,
+} from '../src/lib/overpassQuery.js';
+import { buildGraph } from '../src/lib/graph.js';
 import { HIGHWAY_KINDS } from '../src/lib/narrowness.js';
 
 const bounds = { south: 35.71, west: 139.76, north: 35.73, east: 139.78 };
@@ -22,29 +30,63 @@ describe('buildRoadQuery', () => {
   });
 });
 
-describe('boundsToParams / parseBoundsParams', () => {
-  it('往復で同じ範囲に戻る', () => {
-    const params = new URLSearchParams(boundsToParams(bounds));
-    expect(parseBoundsParams(params)).toEqual(bounds);
-  });
-
-  it('小数6桁に丸める', () => {
-    expect(boundsToParams({ south: 1.23456789, west: 2, north: 3, east: 4 })).toBe(
-      's=1.234568&w=2.000000&n=3.000000&e=4.000000',
-    );
+describe('tileToParams / parseTileParams', () => {
+  it('往復で同じタイルに戻る', () => {
+    expect(tileToParams({ tx: 4659, ty: -3 })).toBe('tx=4659&ty=-3');
+    expect(parseTileParams(new URLSearchParams(tileToParams({ tx: 4659, ty: -3 })))).toEqual({
+      tx: 4659,
+      ty: -3,
+    });
   });
 
   it.each([
     ['', 'パラメータなし'],
-    ['s=35.71&w=139.76&n=35.73', 'e がない'],
-    ['s=abc&w=139.76&n=35.73&e=139.78', '数値でない'],
-    ['s=35.73&w=139.76&n=35.71&e=139.78', '南北が逆'],
-    ['s=35.71&w=139.78&n=35.73&e=139.76', '東西が逆'],
-    ['s=35.5&w=139.76&n=35.73&e=139.78', '南北の幅が 0.1 度超'],
-    ['s=35.71&w=139.6&n=35.73&e=139.78', '東西の幅が 0.1 度超'],
-    ['s=-91&w=139.76&n=-90.95&e=139.78', '緯度が範囲外'],
-    ['s=35.71&w=180.5&n=35.73&e=180.55', '経度が範囲外'],
+    ['tx=1', 'ty がない'],
+    ['ty=1', 'tx がない'],
+    ['tx=1.5&ty=2', '小数'],
+    ['tx=abc&ty=2', '数値でない'],
+    ['tx=&ty=2', '空'],
+    ['tx=1&ty=4000', '緯度が範囲外'],
+    ['tx=1&ty=-4000', '緯度が範囲外（負）'],
+    ['tx=99999&ty=1', '経度が範囲外'],
+    ['tx=-99999&ty=1', '経度が範囲外（負）'],
   ])('%s → null（%s）', (qs) => {
-    expect(parseBoundsParams(new URLSearchParams(qs))).toBeNull();
+    expect(parseTileParams(new URLSearchParams(qs))).toBeNull();
+  });
+});
+
+const raw = {
+  elements: [
+    { type: 'node', id: 1, lat: 35.7, lon: 139.7, tags: { name: '交差点' } },
+    { type: 'node', id: 2, lat: 35.7, lon: 139.701 },
+    { type: 'node', id: 3, lat: 35.701, lon: 139.701 },
+    { type: 'way', id: 10, nodes: [1, 2, 3], tags: { highway: 'residential', width: '3', name: '路地' } },
+    { type: 'way', id: 11, nodes: [1, 3], tags: { highway: 'footway', footway: 'sidewalk' } },
+    { type: 'relation', id: 99, members: [] },
+  ],
+};
+
+describe('compactOsm / expandOsm', () => {
+  it('必要なタグだけ残し、node は平らな配列にする', () => {
+    const c = compactOsm(raw);
+    expect(c.nodes).toEqual([1, 35.7, 139.7, 2, 35.7, 139.701, 3, 35.701, 139.701]);
+    expect(c.ways[0]).toEqual([10, [1, 2, 3], { highway: 'residential', width: '3' }]);
+    expect(JSON.stringify(c)).not.toContain('name');
+  });
+
+  it('往復してもグラフの辺が同じ', () => {
+    const a = buildGraph(raw).edges;
+    const b = buildGraph(expandOsm(compactOsm(raw))).edges;
+    expect(b.length).toBe(a.length);
+    expect(b.length).toBeGreaterThan(0);
+    expect(b).toEqual(a);
+  });
+});
+
+describe('mergeOsm', () => {
+  it('同じ type+id の重複を取り除く', () => {
+    const merged = mergeOsm([expandOsm(compactOsm(raw)), expandOsm(compactOsm(raw))]);
+    expect(merged.elements).toHaveLength(5);
+    expect(buildGraph(merged).edges).toEqual(buildGraph(raw).edges);
   });
 });

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
-import { fetchRoads } from './api/_overpass-upstream.js';
-import { parseBoundsParams } from './src/lib/overpassQuery.js';
+import { fetchTile } from './api/_overpass-upstream.js';
+import { parseTileParams } from './src/lib/overpassQuery.js';
 
 // dev でも本番と同じ /api/overpass を叩けるようにする。
 // 経路を1本にそろえておかないと「dev では動くのに本番だけ壊れる」が起きる。
@@ -10,17 +10,18 @@ function overpassDev() {
     configureServer(server) {
       server.middlewares.use('/api/overpass', async (req, res) => {
         res.setHeader('Content-Type', 'application/json');
-        const bounds = parseBoundsParams(new URL(req.url, 'http://localhost').searchParams);
-        if (!bounds) {
+        const tile = parseTileParams(new URL(req.url, 'http://localhost').searchParams);
+        if (!tile) {
           res.statusCode = 400;
-          res.end(JSON.stringify({ error: 'bad bounds' }));
+          res.end(JSON.stringify({ error: 'bad tile' }));
           return;
         }
         try {
-          res.end(JSON.stringify(await fetchRoads(bounds)));
+          res.end(JSON.stringify(await fetchTile(tile)));
         } catch (e) {
+          console.error(e);
           res.statusCode = 502;
-          res.end(JSON.stringify({ error: String(e?.message ?? e) }));
+          res.end(JSON.stringify({ error: 'upstream failed' }));
         }
       });
     },

@@ -82,6 +82,8 @@ describe('除外', () => {
     [{ highway: 'construction' }],
     [{ highway: 'proposed' }],
     [{ highway: 'bus_stop' }],
+    [{ highway: 'constructor' }],
+    [{ highway: 'toString' }],
     [{ highway: 'residential', access: 'private' }],
     [{ highway: 'service', access: 'no' }],
     [{ highway: 'footway', foot: 'no' }],

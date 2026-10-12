@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "ほそみち — 狭い道を選んで案内する散歩ナビ",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

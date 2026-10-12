@@ -1,6 +1,7 @@
 // サーバ側から Overpass を叩く。Vercel 関数（api/overpass.js）と Vite の dev middleware で共有する。
 import net from 'node:net';
-import { buildRoadQuery } from '../src/lib/overpassQuery.js';
+import { buildRoadQuery, compactOsm } from '../src/lib/overpassQuery.js';
+import { tileBounds } from '../src/lib/tiles.js';
 
 // Node の happy eyeballs は1アドレスあたり250msで次へ進む。ドイツの Overpass までは往復でそれを超えるので全滅する（IPv6 不通＋片方のサーバ拒否の環境で実測）。1秒に延ばす
 net.setDefaultAutoSelectFamilyAttemptTimeout(1000);
@@ -29,10 +30,21 @@ export async function fetchRoads(bounds) {
         lastError = new Error(`overpass ${res.status}`);
         continue;
       }
-      return await res.json();
+      const json = await res.json();
+      // Overpass は時間切れやメモリ不足でも 200 で remark を付け、途中までの elements を返す
+      if (typeof json.remark === 'string' && /error|timed out|out of memory/i.test(json.remark)) {
+        lastError = new Error(json.remark);
+        continue;
+      }
+      return json;
     } catch (e) {
       lastError = e;
     }
   }
   throw lastError;
+}
+
+// 1タイル分をコンパクト形式で返す（Vercel の応答上限 4.5MB に収めるため）
+export async function fetchTile(tile) {
+  return compactOsm(await fetchRoads(tileBounds(tile)));
 }
