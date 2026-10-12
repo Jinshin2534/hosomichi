@@ -22,6 +22,7 @@ export const ERROR_MESSAGES = {
   'same-point': '出発地と目的地が近すぎます',
   unreachable: 'ルートが見つかりません',
   'no-start': '出発地を選んでください（現在地が取れていません）',
+  unexpected: '予期しないエラーが起きました。もう一度お試しください',
 };
 
 export const NO_IMPROVEMENT_NOTE = 'この範囲では狭い道を増やせませんでした';

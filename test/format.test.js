@@ -50,6 +50,7 @@ describe('文言', () => {
       'same-point': '出発地と目的地が近すぎます',
       unreachable: 'ルートが見つかりません',
       'no-start': '出発地を選んでください（現在地が取れていません）',
+      unexpected: '予期しないエラーが起きました。もう一度お試しください',
     });
     expect(NO_IMPROVEMENT_NOTE).toBe('この範囲では狭い道を増やせませんでした');
   });

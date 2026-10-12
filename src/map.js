@@ -9,7 +9,9 @@ const BAND_STYLE = {
 };
 
 export function createMap(el, { onPick }) {
-  const map = L.map(el, { zoomControl: false }).setView(TOKYO, 16);
+  const map = L.map(el, { zoomControl: false, attributionControl: false }).setView(TOKYO, 16);
+  // 下のパネルに隠れないよう左上（右上は現在地ボタン）
+  L.control.attribution({ position: 'topleft' }).addTo(map);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',

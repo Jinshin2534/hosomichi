@@ -23,6 +23,7 @@ const panel = createPanel({
   onGo: () => go(),
   onDetourChange: (r) => {
     state.maxDetour = r;
+    if (!state.busy) clearResult();
   },
   onLocate: () => {
     if (state.user) view.center(state.user);
@@ -48,8 +49,17 @@ function refresh() {
   view.setGoal(state.goal);
 }
 
+// 入力が変わったら古い結果は捨てる
+function clearResult() {
+  panel.hideResult();
+  view.clearRoute();
+  panel.setStatus('');
+  state.lastResult = null;
+}
+
 function pick(role, point) {
   state[role] = point;
+  if (!state.busy) clearResult(); // 計算中は走っている実行に触らない
   refresh();
 }
 
@@ -82,19 +92,28 @@ async function go() {
     panel.setStatus('ほそみちを探しています…');
     await new Promise((resolve) => setTimeout(resolve, 0)); // 文言を描画させてから重い計算に入る
 
-    const graph = buildGraph(osm);
-    const result = planRoute(graph, start, goal, state.maxDetour);
-    if (!result.ok) {
-      panel.setStatus(ERROR_MESSAGES[result.error], 'error');
-      return;
+    try {
+      const graph = buildGraph(osm);
+      const result = planRoute(graph, start, goal, state.maxDetour);
+      if (!result.ok) {
+        panel.setStatus(ERROR_MESSAGES[result.error], 'error');
+        return;
+      }
+      const stats = routeStats(result.chosen, result.shortest);
+      state.lastResult = { ...result, stats };
+      // パネルが伸びてから余白を測る（先に測ると下側がパネルに隠れる）
+      panel.setStatus('');
+      panel.showResult(stats, result.alpha === 0);
+      view.drawRoute(segmentsByBand(result.chosen, graph.nodes), pathLatLngs(result.shortest, graph.nodes), {
+        bottomPadding: panel.bottomInset(),
+      });
+    } catch (err) {
+      console.error(err);
+      panel.hideResult();
+      view.clearRoute();
+      state.lastResult = null;
+      panel.setStatus(ERROR_MESSAGES.unexpected, 'error');
     }
-    const stats = routeStats(result.chosen, result.shortest);
-    state.lastResult = { ...result, stats };
-    view.drawRoute(segmentsByBand(result.chosen, graph.nodes), pathLatLngs(result.shortest, graph.nodes), {
-      bottomPadding: panel.bottomInset(),
-    });
-    panel.setStatus('');
-    panel.showResult(stats, result.alpha === 0);
   } finally {
     state.busy = false;
     refresh();
