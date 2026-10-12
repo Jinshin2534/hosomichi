@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - プロジェクトの場所: `/Users/nokokoro/ranzo_project/hosomichi`（git リポジトリ、ブランチ `master`）
-- パッケージマネージャ: pnpm。dev server は port **5730**（`strictPort: true`）
+- パッケージマネージャ: pnpm。dev server は port **5790**（`strictPort: true`）
 - テストは `test/**/*.test.js`、`pnpm test`（= `vitest run`）で実行
 - `src/lib` 内のファイルは DOM・`fetch`・`window` に触れない
 - 直線距離の上限: **5000m**。吸着の上限: **200m**。狭い道の閾値: **n ≥ 0.7**
@@ -113,7 +113,7 @@ dist
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  server: { port: 5730, strictPort: true },
+  server: { port: 5790, strictPort: true },
   test: { include: ['test/**/*.test.js'] },
 });
 ```
@@ -1810,7 +1810,7 @@ function overpassDev() {
 
 export default defineConfig({
   plugins: [overpassDev()],
-  server: { port: 5730, strictPort: true },
+  server: { port: 5790, strictPort: true },
   test: { include: ['test/**/*.test.js'] },
 });
 ```
@@ -2581,7 +2581,7 @@ Expected: テストはすべて PASS、`vite build` が `dist/` を出力して�
       "name": "hosomichi",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["dev"],
-      "port": 5730
+      "port": 5790
     }
   ]
 }
@@ -2652,7 +2652,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ```bash
 pnpm install
-pnpm dev        # http://localhost:5730
+pnpm dev        # http://localhost:5790
 pnpm test
 pnpm fixture    # 谷中の実データ fixture を取り直す
 ```

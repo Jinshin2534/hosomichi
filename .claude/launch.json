@@ -5,7 +5,7 @@
       "name": "hosomichi",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["dev"],
-      "port": 5730
+      "port": 5790
     }
   ]
 }

@@ -29,6 +29,6 @@ function overpassDev() {
 
 export default defineConfig({
   plugins: [overpassDev()],
-  server: { port: 5730, strictPort: true },
+  server: { port: 5790, strictPort: true },
   test: { include: ['test/**/*.test.js'] },
 });

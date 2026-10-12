@@ -11,7 +11,7 @@
 ## 技術
 
 - 場所: `ranzo_project/hosomichi`
-- Vite + 素のJS + pnpm、dev server は port 5730
+- Vite + 素のJS + pnpm、dev server は port 5790
 - 地図: Leaflet + OSM タイル
 - 道データ: Overpass API（開発時は Vite proxy、本番は Vercel 関数 `api/overpass.js` を GET で経由）
 - テスト: Vitest
